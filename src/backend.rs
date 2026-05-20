@@ -2,6 +2,7 @@ use color_eyre::Result;
 
 pub trait Player {
     fn name(&self) -> &str;
+    fn bus_name(&self) -> &str;
     fn title(&self) -> String;
     fn artist(&self) -> String;
     fn is_playing(&self) -> bool;

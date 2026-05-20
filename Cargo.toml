@@ -11,3 +11,5 @@ ratatui = "0.30.0"
 [target.'cfg(target_os = "linux")'.dependencies]
 mpris = "2.1.0"
 dbus = "0.9.11"
+
+

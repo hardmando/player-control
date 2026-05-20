@@ -31,6 +31,7 @@ struct MockPlayer {
 
 impl Player for MockPlayer {
     fn name(&self) -> &str { &self.name }
+    fn bus_name(&self) -> &str { "mock.bus.name" }
     fn title(&self) -> String { self.title.clone() }
     fn artist(&self) -> String { self.artist.clone() }
     fn is_playing(&self) -> bool { self.playing }

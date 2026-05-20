@@ -89,7 +89,8 @@ fn main() -> Result<()> {
                 .iter()
                 .map(|p| {
                     let status = if p.is_playing() { "▶" } else { "⏸" };
-                    ListItem::new(format!("{} {} - {} ({})", status, p.artist(), p.title(), p.name()))
+                    let short_bus = p.bus_name().strip_prefix("org.mpris.MediaPlayer2.").unwrap_or(p.bus_name());
+                    ListItem::new(format!("{} {} - {} ({} | {})", status, p.artist(), p.title(), p.name(), short_bus))
                 })
                 .collect();
 
@@ -137,7 +138,39 @@ fn main() -> Result<()> {
         }
         
         // Refresh player list/state
-        app.players = backend_impl.players()?;
+        let selected_bus_name = app.state.selected().and_then(|i| app.players.get(i)).map(|p| p.bus_name().to_string());
+        let mut players = backend_impl.players()?;
+        
+        // Deduplicate by title. If main browser and tab extension report same video, keep tab extension.
+        // Or just keep first seen per title.
+        let mut unique_players = Vec::new();
+        let mut seen_titles = std::collections::HashSet::new();
+        
+        // Sort to prioritize tab instances (longer bus names or specific patterns) over main instances
+        players.sort_by(|a, b| b.bus_name().len().cmp(&a.bus_name().len()));
+        
+        for p in players {
+            let title = p.title();
+            if title.is_empty() || title == "Unknown" {
+                unique_players.push(p);
+            } else if seen_titles.insert(title) {
+                unique_players.push(p);
+            }
+        }
+        
+        app.players = unique_players;
+        app.players.sort_by(|a, b| a.bus_name().cmp(b.bus_name()));
+        
+        // Restore selection
+        if let Some(bus_name) = selected_bus_name {
+            if let Some(new_idx) = app.players.iter().position(|p| p.bus_name() == bus_name) {
+                app.state.select(Some(new_idx));
+            } else {
+                app.state.select(if app.players.is_empty() { None } else { Some(0) });
+            }
+        } else if !app.players.is_empty() && app.state.selected().is_none() {
+            app.state.select(Some(0));
+        }
     }
 
     disable_raw_mode()?;

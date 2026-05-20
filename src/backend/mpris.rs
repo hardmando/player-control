@@ -19,6 +19,7 @@ struct MprisPlayer(mpris::Player);
 
 impl Player for MprisPlayer {
     fn name(&self) -> &str { self.0.identity() }
+    fn bus_name(&self) -> &str { self.0.bus_name() }
     fn title(&self) -> String {
         self.0.get_metadata()
             .ok()
